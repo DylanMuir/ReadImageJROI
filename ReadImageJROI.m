@@ -527,27 +527,41 @@ fclose(fidROI);
          return;
       end
       
-      
       % -- Convert arguments
       
-      if (iscell(varargin{1}))
-         cellArray = CellFlatten(varargin{1}{:});
-      else
-         cellArray = varargin(1);
+      % - Which elements contain cell subarrays?
+      vbIsCellSubarray = cellfun(@iscell, varargin, 'UniformOutput', true);
+      
+      % - Skip if no cell subarrays
+      if ~any(vbIsCellSubarray)
+         cellArray = varargin;
+         return;
       end
       
-      for (nIndexArg = 2:length(varargin)) %#ok<FORPF>
-         if (iscell(varargin{nIndexArg}))
-            cellReturn = CellFlatten(varargin{nIndexArg}{:});
-            cellArray = [cellArray cellReturn{:}]; %#ok<AGROW>
-         else
-            cellArray = [cellArray varargin{nIndexArg}]; %#ok<AGROW>
-         end
-      end
+      % - Recursively flatten subarrays
+      varargin(vbIsCellSubarray) = cellfun(@(c)CellFlatten(c{:}), varargin(vbIsCellSubarray), 'UniformOutput', false);
       
+      % - Count the total number of arguments
+      vnArgSizes(nargin) = nan;
+      vnArgSizes(~vbIsCellSubarray) = 1;
+      vnArgSizes(vbIsCellSubarray) = cellfun(@numel, varargin(vbIsCellSubarray), 'UniformOutput', true);
+      vnArgEnds = cumsum(vnArgSizes);
+      vnArgStarts = [1 vnArgEnds(1:end-1)+1];
+      nNumArgs = vnArgEnds(end);
+      
+      % - Preallocate return array
+      cellArray = cell(1, nNumArgs);
+      
+      % - Deal out non-cell subarray arguments
+      cellArray(vnArgEnds(~vbIsCellSubarray)) = varargin(~vbIsCellSubarray);
+      
+      % - Deal out arguments into return array
+      for nIndexArg = find(vbIsCellSubarray)
+         cellArray(vnArgStarts(nIndexArg):vnArgEnds(nIndexArg)) = varargin{nIndexArg};
+      end
       
       % --- END of CellFlatten.m ---
-      
+
    end
 
 end
