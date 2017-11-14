@@ -198,8 +198,7 @@ if (isequal(lower(strExt), '.zip'))
    cvsROIs = ReadImageJROI(cstrFilenames);
    
    % - Clean up temporary directory
-   delete([strROIDir filesep '*.roi']);
-   rmdir(strROIDir);
+   rmdir(strROIDir, 's');
    
    % - Return ROIs
    sROI = cvsROIs;
@@ -490,7 +489,7 @@ fclose(fidROI);
       % - Filter ROI files
       while (entry~=0)
          name = entry.getName;
-         if (name.endsWith('.roi'))
+         if (name.endsWith('.roi')) && (~name.startsWith('__MACOSX'))
             filelist = cat(1,filelist,char(name));
          end;
          entry = in.getNextEntry();
